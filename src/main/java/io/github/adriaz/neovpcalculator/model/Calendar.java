@@ -41,7 +41,6 @@ public class Calendar {
             throw new NoHolidaysException("В производственном календаре не найдено праздников за " + year + " год");
         }
 
-//        TODO: Проверить парсинг даты
         Iterator<String> iterator = holidayCal.iterator();
         while (iterator.hasNext()) {
             holidays.add(LocalDate.parse(iterator.next()));
@@ -50,7 +49,6 @@ public class Calendar {
         return holidays;
     }
 
-//      TODO: проверить обработку и парсинг года
     public boolean isHoliday(LocalDate date) throws NoSuchYearException, NoHolidaysException {
         String year = Integer.toString(date.getYear());
         ArrayList<LocalDate> holidays = getHolidays(year);
