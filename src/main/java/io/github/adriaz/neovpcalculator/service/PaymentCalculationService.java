@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 @Service
 public class PaymentCalculationService {
@@ -16,9 +17,11 @@ public class PaymentCalculationService {
     @Value("${holidayCalendar.path}")
     private String calPath;
 
-    public int calcVacationDuration(String startVacationDate, String endVacationDate) throws IncorrectDateOrderException, NoSuchYearException, NoHolidaysException, IncorrectVacationPeriodException {
+    public int calcVacationDuration(String startVacationDate, String endVacationDate) throws VacationPaymentBaseException {
         int holidays = 0;
         int vacationDuration = 0;
+        LocalDate start = null;
+        LocalDate end = null;
         DateTimeFormatter inputDateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
         Calendar calendar = new Calendar(calPath);
 
@@ -26,11 +29,15 @@ public class PaymentCalculationService {
             throw new IncorrectVacationPeriodException("Даты не могут быть пустыми");
         }
 
-        LocalDate start = LocalDate.parse(startVacationDate, inputDateFormatter);
-        LocalDate end = LocalDate.parse(endVacationDate, inputDateFormatter);
+        try {
+            start = LocalDate.parse(startVacationDate, inputDateFormatter);
+            end = LocalDate.parse(endVacationDate, inputDateFormatter);
+        } catch (DateTimeParseException e) {
+            throw new IncorrectDateTimeFormatException("Дата(ы) введены в неправильном формате");
+        }
 
         if (start.isAfter(end)) {
-            throw new IncorrectDateOrderException("Использован некорректный порядок дат начала и конца отпуска");
+            throw new IncorrectDateOrderException("Даты введены в неправильном порядке");
         }
 
         if (start.getYear() != end.getYear()) {
@@ -55,7 +62,7 @@ public class PaymentCalculationService {
 
     public double calcPayment(double avgSalary, int vacationDays) throws IncorrectSalaryException, IncorrectVacationPeriodException {
         if (avgSalary <= 0) {
-            throw new IncorrectSalaryException("Заработная плата не может быть меньше и равна 0");
+            throw new IncorrectSalaryException("Заработная плата не может быть меньше или равна 0");
         }
 
         if (vacationDays < 1) {
