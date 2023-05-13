@@ -2,6 +2,7 @@ package io.github.adriaz.neovpcalculator.service;
 
 import io.github.adriaz.neovpcalculator.exception.*;
 import io.github.adriaz.neovpcalculator.model.Calendar;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.Period;
@@ -10,15 +11,21 @@ import java.time.format.DateTimeFormatter;
 @Service
 public class PaymentCalculationService {
     // Если месяц отработан полностью, то количество дней считается равным 29.3
-//    @Value("${DAYS_IN_MONTH}")
-    private static double DAYS_IN_MONTH = 29.3;
-    public int calcVacationDuration(String startVacationDate, String endVacationDate) throws IncorrectDateOrderException, NoSuchYearException, NoHolidaysException {
+    @Value("${paymentCalculationService.days_in_month}")
+    private double DAYS_IN_MONTH = 29.3;
+    @Value("${holidayCalendar.path}")
+    private String calPath;
+
+    public int calcVacationDuration(String startVacationDate, String endVacationDate) throws IncorrectDateOrderException, NoSuchYearException, NoHolidaysException, IncorrectVacationPeriodException {
         int holidays = 0;
         int vacationDuration = 0;
         DateTimeFormatter inputDateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-        Calendar calendar = new Calendar("src/main/resources/calendar.json");
+        Calendar calendar = new Calendar(calPath);
 
-        // TODO: добавить тесты
+        if (startVacationDate.equals("") || startVacationDate == null || endVacationDate.equals("") || endVacationDate == null) {
+            throw new IncorrectVacationPeriodException("Даты не могут быть пустыми");
+        }
+
         LocalDate start = LocalDate.parse(startVacationDate, inputDateFormatter);
         LocalDate end = LocalDate.parse(endVacationDate, inputDateFormatter);
 
@@ -41,20 +48,12 @@ public class PaymentCalculationService {
                 holidays++;
             }
         }
-
-        System.out.println("Начало отпуска: " + start);
-        System.out.println("Конец отпуска: " + end);
-        System.out.println("Отпуск длится " + vacationDuration + " дней");
-        System.out.println("На весь отпуск выпадает " + holidays + " неоплачиваемых праздников");
         // Вычесть из дней отпуска неоплачиваемые праздничные дни
         vacationDuration -= holidays;
-        System.out.println("Количество дней, за которые положены отпускные: " + vacationDuration + "\n\n");
-
         return vacationDuration;
     }
 
     public double calcPayment(double avgSalary, int vacationDays) throws IncorrectSalaryException, IncorrectVacationPeriodException {
-        // TODO: добавить тесты
         if (avgSalary <= 0) {
             throw new IncorrectSalaryException("Заработная плата не может быть меньше и равна 0");
         }
@@ -65,15 +64,10 @@ public class PaymentCalculationService {
 
         // Средний дневной заработок = Выплаты в расчетном периоде / Количество отработанных дней
         double avgDaySalary = (double) Math.round(avgSalary / DAYS_IN_MONTH * 100) / 100;
-        System.out.println("Средний дневной заработок составляет " + avgDaySalary);
-
         // Отпускные = Средний дневной заработок x Кол-во календарных дней отпуска
         double vacationPayment = (double) Math.round(avgDaySalary * vacationDays * 100) / 100;
-        System.out.println("Размер отпускных до вычета НДФЛ составляет " + vacationPayment);
-
         // Отпускные за вычетом 13% НДФЛ
         vacationPayment = (double) Math.round(vacationPayment * 0.87 * 100) / 100;
-        System.out.println("Размер отпускных после вычета НДФЛ составляет " + vacationPayment);
 
         return vacationPayment;
     }

@@ -22,8 +22,8 @@ public class PaymentController {
             return new ResponseEntity(payment, HttpStatus.OK);
         } catch (NoSuchYearException e) {
             return new ResponseEntity(e.getMessage(), HttpStatus.NOT_FOUND);
-        } catch (VacationPaymentBaseException e1) {
-            return new ResponseEntity(e1.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (VacationPaymentBaseException e) {
+            return new ResponseEntity(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
 }
